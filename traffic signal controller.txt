@@ -1,0 +1,81 @@
+`timescale 1ns / 1ps
+//
+`define TRUE 1'b1
+`define FALSE 1'b0
+//delay
+`define y2rdelay 3  //yello to red delay
+`define r2gdelay 2  //red to green delay
+
+module traffic_control(hwy,cnty,x,clk,clear);
+    input x,clk,clear;
+    output reg [1:0]hwy,cnty;
+// status of light
+   parameter red =2'd0; 
+   parameter yellow = 2'd1;
+   parameter green= 2'd2; 
+
+// state defination 
+          parameter s0=3'd0;
+          parameter s1=3'd1;
+          parameter s2=3'd2;
+          parameter s3=3'd3;
+          parameter s4=3'd4;
+ // internal variable
+     reg[2:0]state;
+     reg[2:0]next_state;
+
+ // state change only at positive edge
+ always @(posedge clk)           
+     if(clear)
+       state<=s0;
+   else
+state<=next_state;
+
+// compute value of main signal and contry signal
+always @(state)
+begin      hwy=green;  // define light assignment
+           cnty=red;
+      case(state)
+      s0: ;
+      s1:  hwy=yellow;
+      s2:  hwy=red;
+      s3: begin
+          hwy=red;
+          cnty=green;
+      end
+      s4: begin
+          hwy=red;
+          cnty=yellow;
+      end
+      endcase
+      end
+
+ // state machine using case statement
+ always @(state,x)
+      begin
+      case(state)
+      s0: if(x)
+          next_state=s1;
+   else
+       next_state=s0;
+s1: begin
+   repeat(`y2rdelay)next_state=s1;
+next_state=s2;
+   end
+s2: begin
+    repeat(`r2gdelay) next_state=s2;
+next_state=s3;
+  end
+s3: if (x)
+next_state=s3;
+  else
+next_state=s4;
+s4: begin
+   repeat(`y2rdelay)next_state=s4;
+next_state=s0;
+  end
+default: next_state=s0;
+endcase 
+end      
+
+endmodule
